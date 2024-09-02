@@ -29,7 +29,7 @@ public class UserService {
         user.setEmail(userDTO.getEmail());
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
 
-        Role role = roleRepository.findByName(RoleName.CUSTOMER);
+        Role role = roleRepository.findByName(RoleName.CUSTOMER).orElseThrow(() -> new RuntimeException("Role not found."));
         user.setRoles(List.of(role));
 
         user.setCreatedAt(LocalDateTime.now());
