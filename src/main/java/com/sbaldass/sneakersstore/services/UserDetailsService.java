@@ -18,24 +18,21 @@ import java.util.List;
 public class UserDetailsService implements org.springframework.security.core.userdetails.UserDetailsService {
 
     @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
-
-    @Autowired
     private UserRepository userRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-       User user = userRepository.findByUsername(username);
+        User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found."));
 
-       return new org.springframework.security.core.userdetails.User(
-               user.getUsername(),
-               passwordEncoder.encode(user.getPassword()),
-               getAuthorities(user.getRoles())
-       );
+        return new org.springframework.security.core.userdetails.User(
+                user.getUsername(),
+                user.getPassword(),
+                getAuthorities(user.getRole())
+        );
     }
 
-    public static Collection<? extends GrantedAuthority> getAuthorities(List<Role> roles) {
-        SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + roles.stream().map(Role::getName));
+    public static Collection<? extends GrantedAuthority> getAuthorities(Role role) {
+        SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role.getName());
         return List.of(authority);
     }
 }

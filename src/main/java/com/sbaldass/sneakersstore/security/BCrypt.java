@@ -1,4 +1,4 @@
-package com.sbaldass.sneakersstore.configuration;
+package com.sbaldass.sneakersstore.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

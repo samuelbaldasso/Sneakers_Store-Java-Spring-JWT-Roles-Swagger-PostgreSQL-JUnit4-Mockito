@@ -1,6 +1,8 @@
 package com.sbaldass.sneakersstore.domain;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import lombok.Data;
@@ -30,14 +32,25 @@ public class User {
 
     private LocalDateTime updatedAt;
 
-    @ManyToMany
-    private List<Role> roles = new ArrayList<>();
+
+    @OneToOne(cascade = CascadeType.REMOVE)
+    @JoinColumn(name = "role_id", referencedColumnName = "id", nullable = false)
+    private Role role;
 
     private String photoUrl;
 
-    @JsonIgnore
     @OneToMany
     Set<Order> orders = new HashSet<>();
 
     private String address;
+
+    public User(String username, String email, String hashedPassword) {
+        this.username = username;
+        this.email = email;
+        this.password = hashedPassword;
+    }
+
+    public User(){
+
+    }
 }

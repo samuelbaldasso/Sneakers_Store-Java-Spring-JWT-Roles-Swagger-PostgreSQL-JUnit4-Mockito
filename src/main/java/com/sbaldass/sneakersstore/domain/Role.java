@@ -1,10 +1,10 @@
 package com.sbaldass.sneakersstore.domain;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -15,10 +15,8 @@ public class Role implements GrantedAuthority {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Enumerated(EnumType.STRING)
     private RoleName name;
-
-    @ManyToMany
-    private List<User> users = new ArrayList<>();
 
     private String description;
 
