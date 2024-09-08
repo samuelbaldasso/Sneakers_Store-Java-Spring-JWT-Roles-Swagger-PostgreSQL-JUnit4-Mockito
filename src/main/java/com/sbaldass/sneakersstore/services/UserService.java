@@ -30,7 +30,7 @@ public class UserService {
     @Autowired
     private AuthenticationManager authenticationManager;
 
-    public void registerUser(User userDTO) {
+    public User registerUser(User userDTO) {
         User user = new User();
         user.setAddress(userDTO.getAddress());
         user.setEmail(userDTO.getEmail());
@@ -44,9 +44,10 @@ public class UserService {
         user.setPhotoUrl(userDTO.getPhotoUrl());
 
         userRepository.save(user);
+        return user;
     }
 
-    public void updateUser(User userDTO, Long id) {
+    public User updateUser(User userDTO, Long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found."));
         user.setAddress(userDTO.getAddress());
         user.setEmail(userDTO.getEmail());
@@ -60,6 +61,7 @@ public class UserService {
         user.setPhotoUrl(userDTO.getPhotoUrl());
 
         userRepository.save(user);
+        return user;
     }
 
     public User loginUser(User request) {
@@ -85,20 +87,20 @@ public class UserService {
         return userRepository.findById(id);
     }
 
-    public void createAdministrator(User input) {
+    public User createAdministrator(User input) {
         Optional<Role> optionalRole = roleRepository.findByName(RoleName.ADMIN);
 
-        if (optionalRole.isEmpty()) {
-            return;
+        if(optionalRole.isPresent()){
+            var user = new User();
+            user.setName(input.getUsername());
+            user.setEmail(input.getEmail());
+            user.setPassword(passwordEncoder.encode(input.getPassword()));
+            user.setRole(optionalRole.get());
+
+            userRepository.save(user);
         }
 
-        var user = new User();
-        user.setName(input.getUsername());
-        user.setEmail(input.getEmail());
-        user.setPassword(passwordEncoder.encode(input.getPassword()));
-        user.setRole(optionalRole.get());
-
-        userRepository.save(user);
+        return input;
     }
 
     public User authenticate(LoginUserDTO input) {

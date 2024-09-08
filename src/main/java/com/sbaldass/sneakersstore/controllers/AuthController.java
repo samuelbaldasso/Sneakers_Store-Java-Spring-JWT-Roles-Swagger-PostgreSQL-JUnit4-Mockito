@@ -31,13 +31,13 @@ public class AuthController {
     private JWTTokenUtils jwtTokenUtils;
 
     @PostMapping("/signup")
-    public ResponseEntity<Void> signup(@Valid @RequestBody User requestDto) {
+    public ResponseEntity<User> signup(@Valid @RequestBody User requestDto) {
         userService.registerUser(requestDto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PostMapping("/signup/admin")
-    public ResponseEntity<Void> signUpAdmin(@Valid @RequestBody User requestDto) {
+    public ResponseEntity<User> signUpAdmin(@Valid @RequestBody User requestDto) {
         userService.createAdministrator(requestDto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
