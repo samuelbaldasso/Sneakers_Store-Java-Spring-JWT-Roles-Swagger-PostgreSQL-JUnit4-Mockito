@@ -21,14 +21,14 @@ import java.nio.file.AccessDeniedException;
 @Component
 public class JWTFilterUtils extends OncePerRequestFilter {
 
-    private final UserDetailsService userDetailsService;
-    private final ObjectMapper objectMapper;
+    @Autowired
+    private UserDetailsService userDetailsService;
 
     @Autowired
-    public JWTFilterUtils(UserDetailsService userDetailsService, ObjectMapper objectMapper) {
-        this.userDetailsService = userDetailsService;
-        this.objectMapper = objectMapper;
-    }
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private JWTTokenUtils jwtTokenUtils;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -39,7 +39,7 @@ public class JWTFilterUtils extends OncePerRequestFilter {
             String username = null;
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 token = authHeader.substring(7);
-                username = JWTTokenUtils.extractUsername(token);
+                username = jwtTokenUtils.extractUsername(token);
             }
 
             if (token == null) {
@@ -49,7 +49,7 @@ public class JWTFilterUtils extends OncePerRequestFilter {
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                if (JWTTokenUtils.validateToken(token, userDetails)) {
+                if (jwtTokenUtils.isTokenValid(token, userDetails)) {
                     UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);

@@ -16,7 +16,7 @@ import java.util.Optional;
 @RequestMapping("/api/users")
 @RestController
 public class UserController {
-    private UserService userService;
+    private final UserService userService;
 
     @Autowired
     public UserController(UserService userService) {
@@ -40,7 +40,7 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
-    @PreAuthorize("hasAuthority('CUSTOMER')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{id}")
     public void updateUser(@RequestBody User userDTO, @PathVariable Long id) {
         userService.updateUser(userDTO, id);
@@ -52,6 +52,7 @@ public class UserController {
         userService.deleteUser(id);
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/{id}")
     public Optional<User> getUser(@PathVariable Long id) {
         return userService.findById(id);

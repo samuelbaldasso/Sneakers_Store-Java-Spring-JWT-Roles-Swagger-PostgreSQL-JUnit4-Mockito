@@ -1,68 +1,88 @@
 package com.sbaldass.sneakersstore.security;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.SignatureException;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.nio.file.AccessDeniedException;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Base64;
-import java.util.Date;
-import java.util.Objects;
+import java.security.Key;
+import java.util.*;
+import java.util.function.Function;
 
+@Configuration
+@PropertySource(value = {"classpath:application.properties"})
 public class JWTTokenUtils {
-    @Value("security.jwt.secret-key")
-    private static String secretKey;
 
-    @Value("security.jwt.expiration-time")
-    private static long jwtExpiration;
+    @Autowired
+    private Environment environment;
 
-    public static String generateToken(String username) {
-        String encodedString = Base64.getEncoder().encodeToString(secretKey.getBytes());
-        var now = Instant.now();
-        return Jwts.builder()
-                .subject(username)
-                .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plus(jwtExpiration, ChronoUnit.MILLIS)))
-                .signWith(SignatureAlgorithm.HS256, encodedString)
+    private static final Long jwtExpiration = 3600000L;
+
+    public String extractUsername(String token) {
+        return extractClaim(token, Claims::getSubject);
+    }
+
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+        final Claims claims = extractAllClaims(token);
+        return claimsResolver.apply(claims);
+    }
+
+    public String generateToken(UserDetails userDetails) {
+        return generateToken(new HashMap<>(), userDetails);
+    }
+
+    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+        return buildToken(extraClaims, userDetails);
+    }
+
+    public long getExpirationTime() {
+        return jwtExpiration;
+    }
+
+    private String buildToken(
+            Map<String, Object> extraClaims,
+            UserDetails userDetails
+    ) {
+        return Jwts
+                .builder()
+                .setClaims(extraClaims)
+                .setSubject(userDetails.getUsername())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + JWTTokenUtils.jwtExpiration))
+                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public static String extractUsername(String token) throws AccessDeniedException {
-        return getTokenBody(token).getSubject();
-    }
-
-    public static Boolean validateToken(String token, UserDetails userDetails) throws AccessDeniedException {
+    public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
-        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
     }
 
-    private static Claims getTokenBody(String token) throws AccessDeniedException {
-        try {
-            return Jwts
-                    .parser()
-                    .setSigningKey(secretKey)
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
-        } catch (SignatureException | ExpiredJwtException e) {
-            throw new AccessDeniedException("Access denied: " + e.getMessage());
-        }
+    private boolean isTokenExpired(String token) {
+        return extractExpiration(token).before(new Date());
     }
 
-    private static boolean isTokenExpired(String token) throws AccessDeniedException {
-        Claims claims = getTokenBody(token);
-        return claims.getExpiration().before(new Date());
+    private Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
     }
 
-    public static Long getExpirationTime() {
-            return jwtExpiration;
+    private Claims extractAllClaims(String token) {
+        return Jwts
+                .parserBuilder()
+                .setSigningKey(getSignInKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
+    private Key getSignInKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(environment.getProperty("secret-key"));
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 }

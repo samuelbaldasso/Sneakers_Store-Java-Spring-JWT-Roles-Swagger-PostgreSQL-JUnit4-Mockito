@@ -5,10 +5,10 @@ import lombok.Data;
 @Data
 public class LoginResponse {
     private String token;
-    private long expiresIn;
+    private Long expiresIn;
 
-    public LoginResponse(long expiresIn, String token) {
-        this.token = getToken();
-        this.expiresIn = getExpiresIn();
+    public LoginResponse(long expirationTime, String jwtToken) {
+        this.expiresIn = expirationTime;
+        this.token = jwtToken;
     }
 }

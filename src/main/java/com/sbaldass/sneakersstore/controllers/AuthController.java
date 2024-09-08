@@ -15,6 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -27,7 +28,7 @@ public class AuthController {
     private UserService userService;
 
     @Autowired
-    private AuthenticationManager authentication;
+    private JWTTokenUtils jwtTokenUtils;
 
     @PostMapping("/signup")
     public ResponseEntity<Void> signup(@Valid @RequestBody User requestDto) {
@@ -41,19 +42,13 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PostMapping("/signup/vendor")
-    public ResponseEntity<Void> signUpVendor(@Valid @RequestBody User requestDto) {
-        userService.createVendor(requestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
-
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> authenticate(@RequestBody LoginUserDTO loginUserDto) {
-        authentication.authenticate(new UsernamePasswordAuthenticationToken(loginUserDto.getUsername(), loginUserDto.getPassword()));
+        User authUser = userService.authenticate(loginUserDto);
 
-        String jwtToken = JWTTokenUtils.generateToken(loginUserDto.getUsername());
+        String jwtToken = jwtTokenUtils.generateToken(authUser);
 
-        LoginResponse loginResponse = new LoginResponse(JWTTokenUtils.getExpirationTime(), jwtToken);
+        LoginResponse loginResponse = new LoginResponse(jwtTokenUtils.getExpirationTime(), jwtToken);
 
         return ResponseEntity.ok(loginResponse);
     }
