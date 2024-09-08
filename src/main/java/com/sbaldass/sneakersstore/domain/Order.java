@@ -2,8 +2,8 @@ package com.sbaldass.sneakersstore.domain;
 
 import jakarta.persistence.*;
 import lombok.Data;
-
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Entity
 @Table(name = "orders")
@@ -14,14 +14,21 @@ public class Order {
     private Long id;
 
     @ManyToOne
-    private User customer;
+    private User user;
 
     private LocalDateTime orderDate = LocalDateTime.now();
 
-    private String payment;
+    @Enumerated(EnumType.STRING)
+    private OrderStatus status;
 
-    @ManyToOne
-    private Product product;
+    private String paymentMethod;
 
+    private String shippingAddress;
+    private String billingAddress;
 
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<OrderDetail> orderDetails;
+
+    private Double totalPrice;
 }
+
